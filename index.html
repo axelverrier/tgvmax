@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tgvmax</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #f4f4f4;
+      --card:   #ffffff;
+      --text:   #000000;
+      --muted:  #666666;
+      --border: #d0d0d0;
+      --radius: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      min-height: 100vh;
+    }
+
+    header {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 36px 16px 0;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 20px 16px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .field { flex: 1; min-width: 130px; position: relative; }
+    .field label {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .field input {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--card);
+      outline: none;
+    }
+    .field input:focus { border-color: #000; }
+    .field input::placeholder { color: #bbb; }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      font-size: 0.84rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid #000;
+      background: #000;
+      color: #fff;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .btn:hover  { background: #222; border-color: #222; }
+    .btn:active { transform: scale(0.98); }
+
+    /* autocomplete */
+    .ac {
+      position: absolute;
+      top: calc(100% + 3px);
+      left: 0; right: 0;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+      z-index: 500;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    .ac li {
+      list-style: none;
+      padding: 8px 11px;
+      cursor: pointer;
+      font-size: 0.84rem;
+    }
+    .ac li:hover { background: #f4f4f4; }
+
+    /* results */
+    .results { margin-top: 16px; }
+    .results-meta {
+      font-size: 0.73rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 5px;
+    }
+    .row:hover { border-color: #000; }
+    .row-city  { font-weight: 600; font-size: 0.87rem; }
+    .row-times { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .row-right { text-align: right; flex-shrink: 0; }
+    .row-dur   { font-size: 0.84rem; font-weight: 700; }
+    .row-count { font-size: 0.7rem; color: var(--muted); }
+
+    /* toggle */
+    .toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .tgl {
+      padding: 7px 14px;
+      font-size: 0.77rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .tgl:last-child { border-right: none; }
+    .tgl.on { background: #000; color: #fff; }
+
+    /* swap button */
+    .swap-btn {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--muted);
+      font-family: inherit;
+    }
+    .swap-btn:hover { border-color: #000; color: #000; }
+
+    /* split results */
+    .split-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 6px;
+    }
+    .split-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .split-dur  { font-size: 0.78rem; color: var(--muted); }
+    .split-type {
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      color: var(--muted);
+    }
+    .leg { display: flex; align-items: center; gap: 10px; }
+    .leg + .leg { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    .leg-info { flex: 1; }
+    .leg-route { font-size: 0.84rem; font-weight: 600; }
+    .leg-time  { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .layover { font-size: 0.7rem; color: var(--muted); padding: 5px 0; }
+
+    /* states */
+    .loading, .empty {
+      text-align: center;
+      padding: 22px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid #ddd;
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.81rem;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.71rem;
+      color: var(--muted);
+    }
+    footer a { color: #000; }
+
+    @media (max-width: 500px) {
+      .form-row { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>tgvmax</h1>
+</header>
+
+<main>
+
+  <!-- Depuis un départ -->
+  <div class="card">
+    <div class="card-label">Depuis un départ</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Gare</label>
+        <input id="dep-gare" type="text" placeholder="Paris Montparnasse…" autocomplete="off">
+        <ul class="ac" id="dep-gare-ac"></ul>
+      </div>
+      <div class="field" style="max-width:148px">
+        <label>Date</label>
+        <input id="dep-date" type="date">
+      </div>
+      <button class="btn" onclick="searchFrom()">Chercher</button>
+    </div>
+    <div class="results" id="dep-res"></div>
+  </div>
+
+  <!-- Vers une destination -->
+  <div class="card">
+    <div class="card-label">Vers une destination</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Gare</label>
+        <input id="arr-gare" type="text" placeholder="Nice…" autocomplete="off">
+        <ul class="ac" id="arr-gare-ac"></ul>
+      </div>
+      <div class="field" style="max-width:148px">
+        <label>Date</label>
+        <input id="arr-date" type="date">
+      </div>
+      <button class="btn" onclick="searchTo()">Chercher</button>
+    </div>
+    <div class="results" id="arr-res"></div>
+  </div>
+
+  <!-- Itinéraire -->
+  <div class="card">
+    <div class="card-label">Itinéraire</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Départ</label>
+        <input id="it-dep" type="text" placeholder="Lyon Part-Dieu…" autocomplete="off">
+        <ul class="ac" id="it-dep-ac"></ul>
+      </div>
+      <button class="swap-btn" onclick="swapItinerary()" title="Inverser départ / destination">↔</button>
+      <div class="field">
+        <label>Destination</label>
+        <input id="it-dst" type="text" placeholder="Bordeaux…" autocomplete="off">
+        <ul class="ac" id="it-dst-ac"></ul>
+      </div>
+      <div class="field" style="max-width:148px">
+        <label>Date</label>
+        <input id="it-date" type="date">
+      </div>
+      <button class="btn" onclick="searchItinerary()">Chercher</button>
+    </div>
+    <div class="results" id="it-res"></div>
+  </div>
+
+</main>
+
+<footer>
+  <a href="https://data.sncf.com/" target="_blank">Open Data SNCF</a>
+</footer>
+
+<script>
+// ── API ───────────────────────────────────────────────────────────────────────
+
+const API = 'https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/tgvmax/records';
+
+function buildUrl(params) {
+  const parts = [];
+  for (const [k, v] of Object.entries(params)) {
+    (Array.isArray(v) ? v : [v]).forEach(vi => parts.push(`${k}=${encodeURIComponent(String(vi))}`));
+  }
+  return `${API}?${parts.join('&')}`;
+}
+
+async function apiFetch(params) {
+  const res = await fetch(buildUrl(params));
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchTrains(date, field, val) {
+  if (val.startsWith('__ALL__')) {
+    const prefix = val.slice(7);
+    const extra  = prefix === 'PARIS'
+      ? ` or ${field} like "MASSY TGV%" or ${field} like "AEROPORT CDG%"`
+      : '';
+    return apiFetch({
+      where:    `${field} like "${prefix}%"${extra}`,
+      refine:   [`date:${date}`, 'od_happy_card:OUI'],
+      order_by: 'heure_depart',
+      limit:    100,
+    });
+  }
+  return apiFetch({
+    refine:   [`date:${date}`, `${field}:${val}`, 'od_happy_card:OUI'],
+    order_by: 'heure_depart',
+    limit:    100,
+  });
+}
+
+function stationMatches(name, val) {
+  if (!val.startsWith('__ALL__')) return name === val;
+  const prefix = val.slice(7);
+  if (prefix === 'PARIS') return name.startsWith('PARIS') || name.startsWith('MASSY TGV') || name.startsWith('AEROPORT CDG');
+  return name.startsWith(prefix);
+}
+
+// ── Autocomplete ──────────────────────────────────────────────────────────────
+
+function setupAc(inputId, listId, field) {
+  const input = document.getElementById(inputId);
+  const list  = document.getElementById(listId);
+  let timer;
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const raw = input.value.trim();
+    if (raw.length < 2) { list.style.display = 'none'; delete input.dataset.raw; return; }
+    delete input.dataset.raw;
+
+    timer = setTimeout(async () => {
+      try {
+        const data = await apiFetch({ where: `${field} like "${raw.toUpperCase()}%"`, select: field, limit: 100 });
+        const seen = new Set();
+        const stations = data.results.map(r => r[field]).filter(s => s && !seen.has(s) && seen.add(s)).slice(0, 20);
+        list.innerHTML = '';
+        if (!stations.length) { list.style.display = 'none'; return; }
+
+        const prefix = raw.toUpperCase();
+        if (stations.some(s => s.toUpperCase() !== prefix)) {
+          const li = document.createElement('li');
+          li.innerHTML    = `<strong>${tc(raw)}</strong> — toutes les gares`;
+          li.style.cssText = 'border-bottom:1px solid #eee;color:#555;';
+          li.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value       = `${tc(raw)} — toutes les gares`;
+            input.dataset.raw = `__ALL__${prefix}`;
+            list.style.display = 'none';
+          });
+          list.appendChild(li);
+        }
+
+        stations.forEach(s => {
+          const li = document.createElement('li');
+          li.textContent = tc(s);
+          li.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value       = tc(s);
+            input.dataset.raw = s;
+            list.style.display = 'none';
+          });
+          list.appendChild(li);
+        });
+        list.style.display = 'block';
+      } catch { list.style.display = 'none'; }
+    }, 300);
+  });
+
+  input.addEventListener('blur', () => setTimeout(() => { list.style.display = 'none'; }, 160));
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function tc(s) {
+  return s.toLowerCase().replace(/(^|\s|-)(\S)/g, (_, a, b) => a + b.toUpperCase());
+}
+function hhmm(t)      { return t ? t.slice(0, 5) : ''; }
+function mins(t)      { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function dur(dep, arr) {
+  let d = mins(arr) - mins(dep);
+  if (d < 0) d += 1440;
+  const h = Math.floor(d / 60), m = d % 60;
+  return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`;
+}
+function fmtDate(s) {
+  return new Date(s + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' });
+}
+function stationVal(id) {
+  const el = document.getElementById(id);
+  return el.dataset.raw || el.value.trim().toUpperCase();
+}
+function isAll(v)    { return v.startsWith('__ALL__'); }
+function lbl(v)      { return isAll(v) ? tc(v.slice(7)) + ' (toutes gares)' : tc(v); }
+
+function setEl(id, h) { document.getElementById(id).innerHTML = h; }
+function loading(id)  { setEl(id, `<div class="loading"><span class="spinner"></span>Chargement…</div>`); }
+function empty(id, m) { setEl(id, `<div class="empty">${m}</div>`); }
+function showErr(id, e) { setEl(id, `<div class="error">${e.message}</div>`); }
+
+// ── Depuis un départ ──────────────────────────────────────────────────────────
+
+async function searchFrom() {
+  const dep  = stationVal('dep-gare');
+  const date = document.getElementById('dep-date').value;
+  if (!dep.trim()) { alert('Saisissez une gare de départ.'); return; }
+  if (!date)       { alert('Sélectionnez une date.'); return; }
+
+  loading('dep-res');
+  try {
+    const { results } = await fetchTrains(date, 'origine', dep);
+    const depL = lbl(dep);
+
+    if (!results.length) {
+      empty('dep-res', `Aucun TGVmax depuis <strong>${depL}</strong> le ${fmtDate(date)}.`);
+      return;
+    }
+
+    const byDest = {};
+    for (const r of results) {
+      if (!byDest[r.destination]) byDest[r.destination] = [];
+      byDest[r.destination].push(r);
+    }
+    const dests = Object.keys(byDest).sort();
+
+    let html = `<div class="results-meta">${dests.length} destination${dests.length > 1 ? 's' : ''} · ${depL} · ${fmtDate(date)}</div>`;
+    dests.forEach(d => {
+      const trains = byDest[d];
+      const t0     = trains[0];
+      const times  = trains.map(t => {
+        const prefix = isAll(dep) ? `<span style="font-size:0.67rem;color:#999">${tc(t.origine)}</span> ` : '';
+        return `${prefix}${hhmm(t.heure_depart)}→${hhmm(t.heure_arrivee)}`;
+      }).join('&ensp;');
+      html += `<div class="row">
+        <div>
+          <div class="row-city">${tc(d)}</div>
+          <div class="row-times">${times}</div>
+        </div>
+        <div class="row-right">
+          <div class="row-dur">${dur(t0.heure_depart, t0.heure_arrivee)}</div>
+          <div class="row-count">${trains.length} train${trains.length > 1 ? 's' : ''}</div>
+        </div>
+      </div>`;
+    });
+    setEl('dep-res', html);
+  } catch (e) { showErr('dep-res', e); }
+}
+
+// ── Vers une destination ──────────────────────────────────────────────────────
+
+async function searchTo() {
+  const dst  = stationVal('arr-gare');
+  const date = document.getElementById('arr-date').value;
+  if (!dst.trim()) { alert('Saisissez une gare de destination.'); return; }
+  if (!date)       { alert('Sélectionnez une date.'); return; }
+
+  loading('arr-res');
+  try {
+    const { results } = await fetchTrains(date, 'destination', dst);
+    const dstL = lbl(dst);
+
+    if (!results.length) {
+      empty('arr-res', `Aucun TGVmax vers <strong>${dstL}</strong> le ${fmtDate(date)}.`);
+      return;
+    }
+
+    const byOrig = {};
+    for (const r of results) {
+      if (!byOrig[r.origine]) byOrig[r.origine] = [];
+      byOrig[r.origine].push(r);
+    }
+    const origs = Object.keys(byOrig).sort();
+
+    let html = `<div class="results-meta">${origs.length} origine${origs.length > 1 ? 's' : ''} · vers ${dstL} · ${fmtDate(date)}</div>`;
+    origs.forEach(o => {
+      const trains = byOrig[o];
+      const t0     = trains[0];
+      const times  = trains.map(t => `${hhmm(t.heure_depart)}→${hhmm(t.heure_arrivee)}`).join('&ensp;');
+      html += `<div class="row">
+        <div>
+          <div class="row-city">${tc(o)}</div>
+          <div class="row-times">${times}</div>
+        </div>
+        <div class="row-right">
+          <div class="row-dur">${dur(t0.heure_depart, t0.heure_arrivee)}</div>
+          <div class="row-count">${trains.length} train${trains.length > 1 ? 's' : ''}</div>
+        </div>
+      </div>`;
+    });
+    setEl('arr-res', html);
+  } catch (e) { showErr('arr-res', e); }
+}
+
+// ── Itinéraire ────────────────────────────────────────────────────────────────
+
+let itBuckets = { direct: [], one: [], two: [] };
+let itView    = 'direct';
+let itDate    = '';
+let itMeta    = '';
+
+function renderIt() {
+  const { direct, one, two } = itBuckets;
+  const items = itView === 'direct' ? direct
+    : itView === 'one'  ? one
+    : two;
+
+  const label = v => {
+    const c = itBuckets[v].length;
+    const names = { direct: 'Direct', one: '+1', two: '+2' };
+    return `${names[v]}${c ? ` (${c})` : ''}`;
+  };
+
+  let html = `<div class="results-meta">${itMeta}</div>
+  <div class="toggle">
+    <button class="tgl${itView==='direct'?' on':''}" onclick="setItView('direct')">${label('direct')}</button>
+    <button class="tgl${itView==='one'?' on':''}"    onclick="setItView('one')">${label('one')}</button>
+    <button class="tgl${itView==='two'?' on':''}"    onclick="setItView('two')">${label('two')}</button>
+  </div>`;
+
+  if (!items.length) {
+    html += `<div class="empty">Aucun résultat à ce niveau.</div>`;
+    document.getElementById('it-res').innerHTML = html;
+    return;
+  }
+
+  items.forEach(({ legs, type }) => {
+    const first = legs[0], last = legs[legs.length - 1];
+    const typeName = type === 'direct' ? 'Direct' : type === 'one' ? '1 arrêt' : '2 arrêts';
+    html += `<div class="split-item">
+      <div class="split-head">
+        <span class="split-dur">Durée totale : <strong>${dur(first.heure_depart, last.heure_arrivee)}</strong></span>
+        <span class="split-type">${typeName}</span>
+      </div>`;
+    legs.forEach((leg, i) => {
+      if (i > 0) {
+        html += `<div class="layover">Correspondance : ${dur(legs[i-1].heure_arrivee, leg.heure_depart)}</div>`;
+      }
+      const from = tc(leg.origine), to = tc(leg.destination);
+      html += `<div class="leg">
+        <div class="leg-info">
+          <div class="leg-route">${from} → ${to}</div>
+          <div class="leg-time">Train ${leg.train_no} · ${hhmm(leg.heure_depart)} → ${hhmm(leg.heure_arrivee)}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('it-res').innerHTML = html;
+}
+
+function setItView(v) { itView = v; renderIt(); }
+
+async function searchItinerary() {
+  const dep  = stationVal('it-dep');
+  const dst  = stationVal('it-dst');
+  const date = document.getElementById('it-date').value;
+  if (!dep.trim()) { alert('Saisissez une gare de départ.'); return; }
+  if (!dst.trim()) { alert('Saisissez une gare de destination.'); return; }
+  if (!date)       { alert('Sélectionnez une date.'); return; }
+
+  itDate = date;
+  loading('it-res');
+
+  try {
+    const [fromDep, toDst] = await Promise.all([
+      fetchTrains(date, 'origine',     dep),
+      fetchTrains(date, 'destination', dst),
+    ]);
+
+    // Direct trains
+    const direct = fromDep.results
+      .filter(r => stationMatches(r.destination, dst))
+      .map(r => ({ legs: [r], type: 'direct', total: mins(r.heure_arrivee) - mins(r.heure_depart) }))
+      .sort((a, b) => a.total - b.total);
+
+    // Index by via station
+    const leg1ByVia = {};
+    for (const r of fromDep.results) {
+      if (!leg1ByVia[r.destination]) leg1ByVia[r.destination] = [];
+      leg1ByVia[r.destination].push(r);
+    }
+    const leg3ByVia = {};
+    for (const r of toDst.results) {
+      if (!leg3ByVia[r.origine]) leg3ByVia[r.origine] = [];
+      leg3ByVia[r.origine].push(r);
+    }
+
+    // Best 1-stop per via
+    const best1 = new Map();
+    Object.keys(leg1ByVia).forEach(via => {
+      if (!leg3ByVia[via]) return;
+      for (const l1 of leg1ByVia[via]) {
+        for (const l3 of leg3ByVia[via]) {
+          if (mins(l3.heure_depart) - mins(l1.heure_arrivee) < 10) continue;
+          const total = mins(l3.heure_arrivee) - mins(l1.heure_depart);
+          const ex = best1.get(via);
+          if (!ex || total < ex.total) best1.set(via, { legs: [l1, l3], type: 'one', total });
+        }
+      }
+    });
+    const one = [...best1.values()].sort((a, b) => a.total - b.total).slice(0, 15);
+
+    // Best 2-stop per via1|via2
+    const via1List = Object.keys(leg1ByVia).slice(0, 25);
+    const best2 = new Map();
+    if (via1List.length) {
+      let middle = { results: [] };
+      try {
+        middle = await apiFetch({
+          where:    via1List.map(s => `origine="${s}"`).join(' OR '),
+          refine:   [`date:${date}`, 'od_happy_card:OUI'],
+          order_by: 'heure_depart',
+          limit:    100,
+        });
+      } catch { /* 2-stop unavailable, show what we have */ }
+
+      middle.results.forEach(l2 => {
+        const via1 = l2.origine, via2 = l2.destination;
+        if (!leg1ByVia[via1] || !leg3ByVia[via2] || via1 === via2) return;
+        for (const l1 of leg1ByVia[via1]) {
+          if (mins(l2.heure_depart) - mins(l1.heure_arrivee) < 10) continue;
+          for (const l3 of leg3ByVia[via2]) {
+            if (mins(l3.heure_depart) - mins(l2.heure_arrivee) < 10) continue;
+            const total = mins(l3.heure_arrivee) - mins(l1.heure_depart);
+            const key = `${via1}|${via2}`;
+            const ex  = best2.get(key);
+            if (!ex || total < ex.total) best2.set(key, { legs: [l1, l2, l3], type: 'two', total });
+          }
+        }
+      });
+    }
+    const two = [...best2.values()].sort((a, b) => a.total - b.total).slice(0, 15);
+
+    const depL = lbl(dep), dstL = lbl(dst);
+    if (!direct.length && !one.length && !two.length) {
+      empty('it-res', `Aucun itinéraire TGVmax de <strong>${depL}</strong> à <strong>${dstL}</strong> le ${fmtDate(date)}.`);
+      return;
+    }
+
+    itBuckets = { direct, one, two };
+    itMeta    = `${depL} → ${dstL} · ${fmtDate(date)}`;
+    itView    = direct.length ? 'direct' : one.length ? 'one' : 'two';
+    renderIt();
+  } catch (e) { showErr('it-res', e); }
+}
+
+// ── Swap helpers ──────────────────────────────────────────────────────────────
+
+function swapItinerary() {
+  const a = document.getElementById('it-dep');
+  const b = document.getElementById('it-dst');
+  const tmpVal = a.value, tmpRaw = a.dataset.raw;
+  a.value = b.value;
+  if (b.dataset.raw) a.dataset.raw = b.dataset.raw; else delete a.dataset.raw;
+  b.value = tmpVal;
+  if (tmpRaw) b.dataset.raw = tmpRaw; else delete b.dataset.raw;
+  document.getElementById('it-res').innerHTML = '';
+  itBuckets = { direct: [], one: [], two: [] };
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  ['dep-date', 'arr-date', 'it-date'].forEach(id => {
+    document.getElementById(id).value = today;
+    document.getElementById(id).min   = today;
+  });
+  setupAc('dep-gare',  'dep-gare-ac',  'origine');
+  setupAc('arr-gare',  'arr-gare-ac',  'destination');
+  setupAc('it-dep',    'it-dep-ac',    'origine');
+  setupAc('it-dst',    'it-dst-ac',    'destination');
+});
+</script>
+
+</body>
+</html>
