@@ -424,21 +424,26 @@ function setupAc(inputId, listId) {
     delete input.dataset.raw;
 
     const upper = raw.toUpperCase();
-    const matches = STATIONS.filter(s => s.startsWith(upper)).slice(0, 20);
+    const allMatches = STATIONS.filter(s => s.startsWith(upper));
+    const matches = allMatches.slice(0, 20);
     list.innerHTML = '';
     if (!matches.length) { list.style.display = 'none'; return; }
 
-    if (matches.some(s => s !== upper)) {
-      const li = document.createElement('li');
-      li.innerHTML     = `<strong>${tc(raw)}</strong> — toutes les gares`;
-      li.style.cssText = 'border-bottom:1px solid #eee;color:#555;';
-      li.addEventListener('mousedown', e => {
-        e.preventDefault();
-        input.value       = `${tc(raw)} — toutes les gares`;
-        input.dataset.raw = `__ALL__${upper}`;
-        list.style.display = 'none';
-      });
-      list.appendChild(li);
+    const cityWords = new Set(allMatches.map(s => s.split(' ')[0]));
+    if (cityWords.size === 1) {
+      const city = [...cityWords][0];
+      if (allMatches.some(s => s !== city)) {
+        const li = document.createElement('li');
+        li.innerHTML     = `<strong>${tc(city)}</strong> — toutes les gares`;
+        li.style.cssText = 'border-bottom:1px solid #eee;color:#555;';
+        li.addEventListener('mousedown', e => {
+          e.preventDefault();
+          input.value       = `${tc(city)} — toutes les gares`;
+          input.dataset.raw = `__ALL__${city}`;
+          list.style.display = 'none';
+        });
+        list.appendChild(li);
+      }
     }
 
     matches.forEach(s => {
